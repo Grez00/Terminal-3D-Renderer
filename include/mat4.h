@@ -20,6 +20,10 @@ mat4 scale(mat4 m, float f);
 mat4 scale(mat4 m, int f);
 mat4 mult_mm(mat4 m1, mat4 m2);
 vec3 mult_mv(mat4 m, vec3 v);
+mat4 transpose(mat4 m);
+mat4 cofactor(mat4 m);
+mat4 adjugate(mat4 m);
+mat4 inverse(mat4 m);
 float determinant(mat4 m);
 
 #endif

@@ -6,6 +6,7 @@
 
 #include "vec2.h"
 #include "vec3.h"
+#include "vec4.h"
 #include "mat4.h"
 
 #include <curses.h>
@@ -157,6 +158,67 @@ mat4 GetModelMatrix(vec3 offset = vec3(0.0f, 0.0f, 0.0f), vec3 scale = vec3(1.0f
     return mult_mm(offset_matrix, mult_mm(rotation_matrix, mult_mm(scale_matrix, result)));
 }
 
+mat4 GetCOCMatrix(vec3 u, vec3 v, vec3 w, vec3 p){
+    return mat4(
+        u.x, v.x, w.x, p.x,
+        u.y, v.y, w.y, p.y,
+        u.z, v.z, w.z, p.z,
+        0, 0, 0, 1
+    );
+}
+
+mat4 GetCOCMatrix(vec3 a, vec3 b, vec3 p){
+    vec3 u = normalize(a);
+    vec3 w = normalize(cross(u, b));
+    vec3 v = cross(w, u);
+    return GetCOCMatrix(u, v, w, p);
+}
+
+mat4 GetCOCMatrix(vec3 a, vec3 p){
+    vec3 b = vec3(1, 0, 0);
+    if (dot(a, b) > dot(a, vec3(0, 1, 0))){
+        b = vec3(0, 1, 0);
+    }
+    if (dot(a, b) > dot(a, vec3(0, 0, 1))){
+        b = vec3(0, 0, 1);
+    }
+
+    vec3 u = normalize(a);
+    vec3 w = normalize(cross(u, b));
+    vec3 v = cross(w, u);
+    return GetCOCMatrix(u, v, w, p);
+}
+
+mat4 LookAt(vec3 e, vec3 L, vec3 up){
+    vec3 dir = subtract(e, L);
+    vec3 right = cross(dir, up);
+    return inverse(GetCOCMatrix(right, up, dir, e));
+}
+
+mat4 GetWindowingMatrix(vec2 sl, vec2 sh, vec2 el, vec2 eh){
+    return mat4(
+        (eh.x - el.x) / (sh.x - sl.x), 0, 0, el.x - sl.x,
+        0, (eh.y - el.y) / (sh.y - sl.y), 0, el.y - sl.y,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    );
+}
+
+// TODO
+mat4 ViewportMatrix(){
+    return mat4::Identity();
+}
+
+// TODO
+mat4 Perspective(){
+    return mat4::Identity();
+}
+
+// TODO
+mat4 Orthographic(){
+    return mat4::Identity();
+}
+
 // TODO
 mat4 GetProjectionMatrix(float fov, float aspect_ratio, float near_plane, float far_plane){
     return mat4::Identity();
@@ -178,6 +240,21 @@ void DrawProjectedTriangle(Triangle3D tri, bool wire = true){
     else{
         DrawTriangle(projected_tri);
     }
+}
+
+// TODO
+void DrawTriangles(float vertices[], int vert_count){
+
+}
+
+// TODO
+void DrawTrianglesIndexed(float vertices[], float indices[], int vert_count, int index_count){
+
+}
+
+// TODO
+void DrawTriangleStrips(float vertices[], float indices[], int vert_count, int index_count){
+
 }
 
 void DrawWireCube(vec3 vertices[8]){

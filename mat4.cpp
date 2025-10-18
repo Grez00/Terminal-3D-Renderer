@@ -14,7 +14,17 @@ mat4::mat4(float aa, float ab, float ac, float ad,
         float ca, float cb, float cc, float cd,
         float da, float db, float dc, float dd) 
 {
-
+    float pCells[4][4] = {
+        {aa, ab, ac, ad},
+        {ba, bb, bc, bd},
+        {ca, cb, cc, cd},
+        {da, db, dc, dd}
+    };
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 4; j++){
+            cells[i][j] = pCells[i][j];
+        }
+    }
 }
 
 mat4 mat4::Identity(){
@@ -65,6 +75,72 @@ mat4 scale(mat4 m, int f){
         }
     }
     return mat4(result);
+}
+
+// Returns determinant of 3x3 submatrix formed by removing row i and column j from m
+float det3x3(mat4 m, int i, int j){
+    float n[3][3];
+    int mi = 0;
+    int mj = 0;
+    for (int ni = 0; ni < 3; ni++){
+        mj = 0;
+        if (mi == i){
+            mi++;
+        }
+        for (int nj = 0; nj < 3; nj++){
+            if (mj == j){
+                mj++;
+            }
+            n[ni][nj] = m.cells[mi][mj];
+            mj++;
+        }
+        mi++;
+    }
+    return n[0][0]*n[1][1]*n[2][2] + n[0][1]*n[1][2]*n[2][0] + n[0][2]*n[1][0]*n[2][1] 
+    - n[0][2]*n[1][0]*n[2][0] - n[0][1]*n[1][0]*n[2][2] - n[0][0]*n[1][2]*n[2][1];
+}
+
+mat4 cofactor(mat4 m){
+    float cells[4][4];
+    for (int i = 0; i < 4; i++){
+        for (int j = 0; j < 4; j++){
+            cells[i][j] = pow(-1, i + j) * det3x3(m, i, j);
+        }
+    }
+    return mat4(cells);
+}
+
+float determinant(mat4 m){
+    float det = 0;
+    for (int j = 0; j < 4; j++){
+        det += pow(-1, j) * det3x3(m, 0, j) * m.cells[0][j];
+    }
+    return det;
+}
+
+mat4 transpose(mat4 m){
+    float cells[4][4] = {
+        {m.cells[0][0], m.cells[1][0], m.cells[2][0], m.cells[3][0]},
+        {m.cells[0][1], m.cells[1][1], m.cells[2][1], m.cells[3][1]},
+        {m.cells[0][2], m.cells[1][2], m.cells[2][2], m.cells[3][2]},
+        {m.cells[0][3], m.cells[1][3], m.cells[2][3], m.cells[3][3]}
+    };
+    return mat4(cells);
+}
+
+mat4 adjugate(mat4 m){
+    return transpose(cofactor(m));
+}
+
+mat4 inverse(mat4 m){
+    float det = determinant(m);
+    if (det == 0.0f){
+        // no inverse
+        return m;
+    }
+    mat4 adj = adjugate(m);
+
+    return scale(adj, 1.0f/det);
 }
 
 mat4 mult_mm(mat4 m1, mat4 m2){
