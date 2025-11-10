@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <sys/time.h>
 #include <vector>
+#include <functional>
 
 #include "vec2.h"
 #include "vec3.h"
@@ -18,6 +19,35 @@ int VP_WIDTH = 1;
 int VP_HEIGHT = 1;
 
 float viewport_plane = 1.0f;
+
+typedef struct Triangle3D {
+    vec4 vertices[3];
+    Triangle3D(vec4 v1, vec4 v2, vec4 v3);
+    Triangle3D(vec3 v1, vec3 v2, vec3 v3);
+} Triangle3D;
+
+Triangle3D::Triangle3D(vec4 v1, vec4 v2, vec4 v3){
+    vertices[0] = vec4(v1.x, v1.y, v1.z, v1.w);
+    vertices[1] = vec4(v2.x, v2.y, v2.z, v2.w);
+    vertices[2] = vec4(v3.x, v3.y, v3.z, v3.w);
+}
+
+Triangle3D::Triangle3D(vec3 v1, vec3 v2, vec3 v3){
+    vertices[0] = vec4(v1.x, v1.y, v1.z, 1.0f);
+    vertices[1] = vec4(v2.x, v2.y, v2.z, 1.0f);
+    vertices[2] = vec4(v3.x, v3.y, v3.z, 1.0f);
+}
+
+typedef struct Triangle2D {
+    vec2 vertices[3];
+    Triangle2D(vec2 v1, vec2 v2, vec2 v3);
+} Triangle2D;
+
+Triangle2D::Triangle2D(vec2 v1, vec2 v2, vec2 v3){
+    vertices[0] = vec2(v1.x, v1.y);
+    vertices[1] = vec2(v2.x, v2.y);
+    vertices[2] = vec2(v3.x, v3.y);
+}
 
 double GetCurrentTime(){
     struct timeval tv;
@@ -57,7 +87,7 @@ bool IsInTriangle(vec2 p, Triangle2D tri){
     return false;
 }
 
-void DrawTriangle(Triangle2D tri){
+void RasterizeTriangle(Triangle2D tri){
     int randnum = 0;
     for (int i = 0; i < SCR_HEIGHT; i++){
         for (int j = 0; j < SCR_WIDTH; j++){
@@ -108,7 +138,7 @@ void DrawLine(vec2 p0, vec2 p1){
     }
 }
 
-void DrawWireTriangle(Triangle2D tri){
+void RasterizeWireTriangle(Triangle2D tri){
     DrawLine(tri.vertices[0], tri.vertices[1]);
     DrawLine(tri.vertices[1], tri.vertices[2]);
     DrawLine(tri.vertices[2], tri.vertices[0]);
@@ -195,51 +225,76 @@ mat4 LookAt(vec3 e, vec3 L, vec3 up){
     return inverse(GetCOCMatrix(right, up, dir, e));
 }
 
-mat4 GetWindowingMatrix(vec2 sl, vec2 sh, vec2 el, vec2 eh){
+// TODO
+mat4 Get2DWindowingMatrix(vec2 sl, vec2 sh, vec2 el, vec2 eh){
     return mat4(
-        (eh.x - el.x) / (sh.x - sl.x), 0, 0, el.x - sl.x,
-        0, (eh.y - el.y) / (sh.y - sl.y), 0, el.y - sl.y,
+        (eh.x - el.x) / (sh.x - sl.x), 0, 0, (-el.x - sl.x) / (sh.x - sl.x),
+        0, (eh.y - el.y) / (sh.y - sl.y), 0, (-el.y - sl.y) / (sh.y - sl.y),
         0, 0, 1, 0,
         0, 0, 0, 1
     );
 }
 
 // TODO
+mat4 Get3DWindowingMatrix(vec3 sl, vec3 sh, vec3 el, vec3 eh){
+    return mat4(
+        (eh.x - el.x) / (sh.x - sl.x), 0, 0, (-el.x - sl.x) / (sh.x - sl.x),
+        0, (eh.y - el.y) / (sh.y - sl.y), 0, (-el.y - sl.y) / (sh.y - sl.y),
+        0, 0, (eh.z = el.z) / (sh.z - sl.z), (-el.z - sl.z) / (sh.z - sl.z),
+        0, 0, 0, 1
+    );
+}
+
 mat4 ViewportMatrix(){
-    return mat4::Identity();
+    return Get2DWindowingMatrix(vec2(-1, -1), vec2(1, 1), vec2(-0.5, -0.5), vec2(SCR_WIDTH - 0.5, SCR_HEIGHT - 0.5));
+}
+
+mat4 Perspective(float n, float f){
+    return mat4(
+        n, 0, 0, 0,
+        0, n, 0, 0,
+        0, 0, n+f, n*f,
+        0, 0, -1, 0
+    );
 }
 
 // TODO
-mat4 Perspective(){
-    return mat4::Identity();
+mat4 Orthographic(float l, float r, float b, float t, float n, float f){
+    return Get3DWindowingMatrix(vec3(l, b, n), vec3(r, t, f), vec3(-1, -1, -1), vec3(1, 1, 1));
 }
 
 // TODO
-mat4 Orthographic(){
-    return mat4::Identity();
-}
+mat4 GetProjectionMatrix(float fov, float aspect_ratio, float n, float f){
+    float h = tan(fov/2) * 2 * n;
+    float w = aspect_ratio * h;
 
-// TODO
-mat4 GetProjectionMatrix(float fov, float aspect_ratio, float near_plane, float far_plane){
-    return mat4::Identity();
+    float l = -w/2;
+    float r = w/2;
+    float b = -h/2;
+    float t = h/2;
+    return mult_mm(Orthographic(l, r, b, t, n, f), Perspective(n, f));
 }
 
 vec2 ViewportToCanvas(vec2 v){
     return vec2(v.x * (float) SCR_WIDTH / (float) VP_WIDTH, SCR_HEIGHT - (v.y * (float) SCR_HEIGHT / (float) VP_HEIGHT));
 }
 
-vec2 ProjectVertex(vec3 v){
+vec2 ProjectVertex(vec4 v){
     return ViewportToCanvas(vec2(v.x * viewport_plane / v.z, v.y * viewport_plane / v.z));
 }
 
 void DrawProjectedTriangle(Triangle3D tri, bool wire = true){
     Triangle2D projected_tri = Triangle2D(ProjectVertex(tri.vertices[0]), ProjectVertex(tri.vertices[1]), ProjectVertex(tri.vertices[2]));
     if (wire){
-        DrawWireTriangle(projected_tri);
+        RasterizeWireTriangle(projected_tri);
     }
     else{
-        DrawTriangle(projected_tri);
+        RasterizeTriangle(projected_tri);
     }
+}
+
+void DrawTriangle(Triangle3D tri){
+
 }
 
 // TODO
@@ -257,7 +312,7 @@ void DrawTriangleStrips(float vertices[], float indices[], int vert_count, int i
 
 }
 
-void DrawWireCube(vec3 vertices[8]){
+void DrawWireCube(vec4 vertices[8]){
     // The back face
     DrawLine(ProjectVertex(vertices[4]), ProjectVertex(vertices[5]));
     DrawLine(ProjectVertex(vertices[5]), ProjectVertex(vertices[6]));
@@ -311,22 +366,22 @@ main(){
     Triangle3D model_tri = Triangle3D(mult_mv(model, tri1.vertices[0]), mult_mv(model, tri1.vertices[1]), mult_mv(model, tri1.vertices[2]));
 
     // Cube
-    vec3 vertices[8];
+    vec4 vertices[8];
 
     // Front vertices
-    vertices[0] = vec3(0.0f, 0.0f, 0.0f);
-    vertices[1] = vec3(0.0f, 1.0f, 0.0f);
-    vertices[2] = vec3(1.0f, 1.0f, 0.0f);
-    vertices[3] = vec3(1.0f, 0.0f, 0.0f);
+    vertices[0] = vec4(0.0f, 0.0f, 0.0f);
+    vertices[1] = vec4(0.0f, 1.0f, 0.0f);
+    vertices[2] = vec4(1.0f, 1.0f, 0.0f);
+    vertices[3] = vec4(1.0f, 0.0f, 0.0f);
 
     // Back vertices
-    vertices[4] = vec3(0.0f, 0.0f, 1.0f);
-    vertices[5] = vec3(0.0f, 1.0f, 1.0f);
-    vertices[6] = vec3(1.0f, 1.0f, 1.0f);
-    vertices[7] = vec3(1.0f, 0.0f, 1.0f);
+    vertices[4] = vec4(0.0f, 0.0f, 1.0f);
+    vertices[5] = vec4(0.0f, 1.0f, 1.0f);
+    vertices[6] = vec4(1.0f, 1.0f, 1.0f);
+    vertices[7] = vec4(1.0f, 0.0f, 1.0f);
 
     mat4 cube_model = GetModelMatrix(vec3(1.0f, 1.4f, 3.0f), vec3(1.0f, 1.0f, 1.0f), 0.0f, vec3(0.5f, 1.0f, 0.0f), vec3(0.5f, 0.5f, 0.5f));
-    vec3 model_cube[8];
+    vec4 model_cube[8];
     for (int i = 0; i < 8; i++){
         model_cube[i] = mult_mv(cube_model, vertices[i]);
     }
@@ -336,10 +391,6 @@ main(){
         prev_time = current_time;
         current_time = GetCurrentTime() - start_time;
         delta_time = current_time - prev_time;
-
-        //model = GetModelMatrix(vec3(1.0f, 1.0f, 2.0f), vec3(1.0f, 1.0f, 1.0f), current_time, vec3(0.0f, 1.0f, 0.0f), vec3(0.25f, 0.25f, 0.0f));
-        //model_tri = Triangle3D(mult_mv(model, tri1.vertices[0]), mult_mv(model, tri1.vertices[1]), mult_mv(model, tri1.vertices[2]));
-        //DrawProjectedTriangle(model_tri, false);
 
         cube_model = GetModelMatrix(vec3(1.0f, 1.4f, 3.0f), vec3(1.0f, 1.0f, 1.0f), current_time, vec3(0.5f, 1.0f, 0.0f), vec3(0.5f, 0.5f, 0.5f));
         model_cube[8];

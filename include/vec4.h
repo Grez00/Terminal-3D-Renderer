@@ -3,13 +3,8 @@
 
 typedef struct vec4 {
     float x, y, z, w;
-    vec4(float pX = 0.0f, float pY = 0.0f, float pZ = 0.0f, float pW = 0.0f);
+    vec4(float pX = 0.0f, float pY = 0.0f, float pZ = 0.0f, float pW = 1.0f);
 } vec4;
-
-typedef struct Triangle3D_Vec4 {
-    vec4 vertices[3];
-    Triangle3D_Vec4(vec4 v1, vec4 v2, vec4 v3);
-} Triangle3D_Vec4;
 
 vec4 add(vec4 v1, vec4 v2);
 vec4 add(vec4 v, float f);

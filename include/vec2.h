@@ -6,11 +6,6 @@ typedef struct vec2 {
     vec2(float pX = 0.0f, float pY = 0.0f);
 } vec2;
 
-typedef struct Triangle2D {
-    vec2 vertices[3];
-    Triangle2D(vec2 v1, vec2 v2, vec2 v3);
-} Triangle2D;
-
 vec2 add(vec2 v1, vec2 v2);
 vec2 add(vec2 v, float f);
 vec2 subtract(vec2 v1, vec2 v2);

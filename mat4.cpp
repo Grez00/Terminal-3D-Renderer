@@ -156,10 +156,11 @@ mat4 mult_mm(mat4 m1, mat4 m2){
     return mat4(result);
 }
 
-vec3 mult_mv(mat4 m, vec3 v){
-    float x = (m.cells[0][0] * v.x) + (m.cells[0][1] * v.y) + (m.cells[0][2] * v.z) + m.cells[0][3];
-    float y = (m.cells[1][0] * v.x) + (m.cells[1][1] * v.y) + (m.cells[1][2] * v.z) + m.cells[1][3];
-    float z = (m.cells[2][0] * v.x) + (m.cells[2][1] * v.y) + (m.cells[2][2] * v.z) + m.cells[2][3];
-    return vec3(x, y, z);
+vec4 mult_mv(mat4 m, vec4 v){
+    float x = (m.cells[0][0] * v.x) + (m.cells[0][1] * v.y) + (m.cells[0][2] * v.z) + (m.cells[0][3] * v.w);
+    float y = (m.cells[1][0] * v.x) + (m.cells[1][1] * v.y) + (m.cells[1][2] * v.z) + (m.cells[1][3] * v.w);
+    float z = (m.cells[2][0] * v.x) + (m.cells[2][1] * v.y) + (m.cells[2][2] * v.z) + (m.cells[2][3] * v.w);
+    float w = (m.cells[3][0] * v.x) + (m.cells[3][1] * v.y) + (m.cells[3][2] * v.z) + (m.cells[2][3] * v.w);
+    return vec4(x, y, z, w);
 }
 

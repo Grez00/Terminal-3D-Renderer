@@ -2,6 +2,7 @@
 #define MATRIX4_H
 
 #include "vec3.h"
+#include "vec4.h"
 
 typedef struct mat4 {
     float cells[4][4];
@@ -19,7 +20,7 @@ mat4 subtract(mat4 m1, mat4 m2);
 mat4 scale(mat4 m, float f);
 mat4 scale(mat4 m, int f);
 mat4 mult_mm(mat4 m1, mat4 m2);
-vec3 mult_mv(mat4 m, vec3 v);
+vec4 mult_mv(mat4 m, vec4 v);
 mat4 transpose(mat4 m);
 mat4 cofactor(mat4 m);
 mat4 adjugate(mat4 m);

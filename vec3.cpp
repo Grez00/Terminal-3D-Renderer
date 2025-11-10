@@ -7,12 +7,6 @@ vec3::vec3(float pX, float pY, float pZ){
     z = pZ;
 }
 
-Triangle3D::Triangle3D(vec3 v1, vec3 v2, vec3 v3){
-    vertices[0] = vec3(v1.x, v1.y, v1.z);
-    vertices[1] = vec3(v2.x, v2.y, v2.z);
-    vertices[2] = vec3(v3.x, v3.y, v3.z);
-}
-
 vec3 add(vec3 v1, vec3 v2){
     vec3 result = vec3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
     return result;

@@ -8,12 +8,6 @@ vec4::vec4(float pX, float pY, float pZ, float pW){
     w = pW;
 }
 
-Triangle3D::Triangle3D(vec4 v1, vec4 v2, vec4 v3){
-    vertices[0] = vec4(v1.x, v1.y, v1.z, v1.w);
-    vertices[1] = vec4(v2.x, v2.y, v2.z, v2.w);
-    vertices[2] = vec4(v3.x, v3.y, v3.z, v3.w);
-}
-
 vec4 add(vec4 v1, vec4 v2){
     vec4 result = vec4(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v1.w + v2.w);
     return result;
